@@ -1,0 +1,10 @@
+plugins {
+    id("maven-publish")
+    id("java")
+}
+
+version = project.mod_version
+group = project.maven_group
+
+dependencies {
+}
