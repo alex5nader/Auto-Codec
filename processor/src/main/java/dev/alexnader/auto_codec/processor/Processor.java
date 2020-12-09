@@ -58,34 +58,7 @@ public class Processor extends AbstractProcessor {
 
         Map<PackageElement, CodecHolderBuilder> holders = new HashMap<>();
 
-        Set<TypeElement> types = ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(Record.class));
-
-        for (TypeElement type : types) {
-            if (type.getKind() != ElementKind.CLASS) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Record can only be applied to classes.");
-                continue;
-            }
-
-            PackageElement holderPackage = findHolderPackage(type);
-            if (holderPackage == null) {
-                continue;
-            }
-
-            RecordCodecBuilder record = new RecordCodecBuilder(processingEnv, codecs, type, holderPackage);
-
-            for (VariableElement field : ElementFilter.fieldsIn(type.getEnclosedElements())) {
-                if (field.getAnnotation(Exclude.class) != null) {
-                    continue;
-                }
-                if (codecs.containsKey(field.asType()) || field.getAnnotation(Use.class) != null) {
-                    record.addField(field);
-                } else {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Field " + type.getQualifiedName() + "::" + field.getSimpleName() + " must be a simple type or annotated with @Use or @Exclude.");
-                }
-            }
-
-            holders.computeIfAbsent(holderPackage, CodecHolderBuilder::new).addCodec(record);
-        }
+        processRecords(holders, roundEnv);
 
         for (Map.Entry<PackageElement, CodecHolderBuilder> entry : holders.entrySet()) {
             String source = entry.getValue().build();
@@ -102,6 +75,35 @@ public class Processor extends AbstractProcessor {
         }
 
         return false;
+    }
+
+    private void processRecords(Map<PackageElement, CodecHolderBuilder> holders, RoundEnvironment roundEnv) {
+        for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(Record.class))) {
+            if (typeElement.getKind() != ElementKind.CLASS) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, typeElement.getQualifiedName() + " is annotated with @Record, but is not a class.");
+                continue;
+            }
+
+            PackageElement holderPackage = findHolderPackage(typeElement);
+            if (holderPackage == null) {
+                continue;
+            }
+
+            RecordCodecBuilder record = new RecordCodecBuilder(processingEnv, codecs, typeElement, holderPackage);
+
+            for (VariableElement field : ElementFilter.fieldsIn(typeElement.getEnclosedElements())) {
+                if (field.getAnnotation(Exclude.class) != null) {
+                    continue;
+                }
+                if (codecs.containsKey(field.asType()) || field.getAnnotation(Use.class) != null) {
+                    record.addField(field);
+                } else {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Field " + typeElement.getQualifiedName() + "::" + field.getSimpleName() + " must be a simple type or annotated with @Use or @Exclude.");
+                }
+            }
+
+            holders.computeIfAbsent(holderPackage, CodecHolderBuilder::new).addCodec(record);
+        }
     }
 
     @Override
