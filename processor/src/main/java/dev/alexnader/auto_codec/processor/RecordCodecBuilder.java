@@ -6,15 +6,17 @@ import dev.alexnader.auto_codec.Record;
 import dev.alexnader.auto_codec.Use;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class RecordCodecBuilder implements CodecBuilder {
     private final ProcessingEnvironment processingEnvironment;
@@ -89,7 +91,8 @@ public class RecordCodecBuilder implements CodecBuilder {
             contents.append(".fieldOf(\"").append(field.getSimpleName()).append("\").forGetter(obj -> obj.");
 
             boolean fieldIsAccessible;
-            fieldIsAccessible: {
+            fieldIsAccessible:
+            {
                 for (Modifier modifier : field.getModifiers()) {
                     if (modifier == Modifier.PUBLIC) {
                         fieldIsAccessible = true;
@@ -100,7 +103,7 @@ public class RecordCodecBuilder implements CodecBuilder {
                     }
                 }
 
-                fieldIsAccessible = ((PackageElement)targetType.getEnclosingElement()).equals(holderPackage);
+                fieldIsAccessible = ((PackageElement) targetType.getEnclosingElement()).equals(holderPackage);
             }
 
             Getter getter = field.getAnnotation(Getter.class);

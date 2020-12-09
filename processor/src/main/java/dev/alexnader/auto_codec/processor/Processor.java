@@ -9,7 +9,10 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
@@ -19,11 +22,17 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class Processor extends AbstractProcessor {
+    public final Map<TypeMirror, String> codecs = new HashMap<>();
+
     public static String toConstName(String className) {
         return className.replaceAll("([a-z])([A-Z]+)", "$1_$2").toUpperCase(Locale.ROOT);
     }
@@ -31,8 +40,6 @@ public class Processor extends AbstractProcessor {
     public static String getCodecName(TypeElement type, String annotationValue) {
         return toConstName("".equals(annotationValue) ? type.getSimpleName().toString() : annotationValue);
     }
-
-    public final Map<TypeMirror, String> codecs = new HashMap<>();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -108,7 +115,7 @@ public class Processor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Arrays.stream(new Class[] {
+        return Arrays.stream(new Class[]{
             Record.class
         }).map(Class::getName).collect(Collectors.toSet());
     }

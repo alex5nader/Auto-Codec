@@ -19,9 +19,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class SampleClassDataListener implements SimpleResourceReloadListener<Collection<Identifier>> {
+    private final Identifier id = new Identifier("auto_codec_test", "data/test");
+
+    @Override
+    public Identifier getFabricId() {
+        return id;
+    }
+
     @Override
     public CompletableFuture<Collection<Identifier>> load(ResourceManager resourceManager, Profiler profiler, Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
+            //noinspection CodeBlock2Expr
             return resourceManager.findResources("auto_codec_test/sample_class", s -> s.endsWith(".json"));
         }, executor);
     }
@@ -50,12 +58,5 @@ public class SampleClassDataListener implements SimpleResourceReloadListener<Col
                 }
             }
         }, executor);
-    }
-
-    private final Identifier id = new Identifier("auto_codec_test", "data/test");
-
-    @Override
-    public Identifier getFabricId() {
-        return id;
     }
 }
