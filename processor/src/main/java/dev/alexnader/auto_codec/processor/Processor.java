@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class Processor extends AbstractProcessor {
-    public final Map<TypeMirror, String> codecs = new HashMap<>();
-
     public static String toConstName(String className) {
         return className.replaceAll("([a-z])([A-Z]+)", "$1_$2").toUpperCase(Locale.ROOT);
     }
@@ -43,32 +41,42 @@ public class Processor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        Map<TypeMirror, String> codecFields = new HashMap<>();
         {
             Types types = processingEnv.getTypeUtils();
             Elements elements = processingEnv.getElementUtils();
-            codecs.put(elements.getTypeElement("java.lang.Boolean").asType(), "com.mojang.serialization.Codec.BOOL");
-            codecs.put(types.getPrimitiveType(TypeKind.BOOLEAN), "com.mojang.serialization.Codec.BOOL");
-            codecs.put(elements.getTypeElement("java.lang.Byte").asType(), "com.mojang.serialization.Codec.BYTE");
-            codecs.put(types.getPrimitiveType(TypeKind.BYTE), "com.mojang.serialization.Codec.BYTE");
-            codecs.put(elements.getTypeElement("java.lang.Short").asType(), "com.mojang.serialization.Codec.SHORT");
-            codecs.put(types.getPrimitiveType(TypeKind.SHORT), "com.mojang.serialization.Codec.SHORT");
-            codecs.put(elements.getTypeElement("java.lang.Integer").asType(), "com.mojang.serialization.Codec.INT");
-            codecs.put(types.getPrimitiveType(TypeKind.INT), "com.mojang.serialization.Codec.INT");
-            codecs.put(elements.getTypeElement("java.lang.Long").asType(), "com.mojang.serialization.Codec.LONG");
-            codecs.put(types.getPrimitiveType(TypeKind.LONG), "com.mojang.serialization.Codec.LONG");
-            codecs.put(elements.getTypeElement("java.lang.Float").asType(), "com.mojang.serialization.Codec.FLOAT");
-            codecs.put(types.getPrimitiveType(TypeKind.FLOAT), "com.mojang.serialization.Codec.FLOAT");
-            codecs.put(elements.getTypeElement("java.lang.Double").asType(), "com.mojang.serialization.Codec.DOUBLE");
-            codecs.put(types.getPrimitiveType(TypeKind.DOUBLE), "com.mojang.serialization.Codec.DOUBLE");
-            codecs.put(elements.getTypeElement("java.lang.String").asType(), "com.mojang.serialization.Codec.STRING");
+            codecFields.put(elements.getTypeElement("java.lang.Boolean").asType(), "com.mojang.serialization.Codec.BOOL");
+            codecFields.put(types.getPrimitiveType(TypeKind.BOOLEAN), "com.mojang.serialization.Codec.BOOL");
+            codecFields.put(elements.getTypeElement("java.lang.Byte").asType(), "com.mojang.serialization.Codec.BYTE");
+            codecFields.put(types.getPrimitiveType(TypeKind.BYTE), "com.mojang.serialization.Codec.BYTE");
+            codecFields.put(elements.getTypeElement("java.lang.Short").asType(), "com.mojang.serialization.Codec.SHORT");
+            codecFields.put(types.getPrimitiveType(TypeKind.SHORT), "com.mojang.serialization.Codec.SHORT");
+            codecFields.put(elements.getTypeElement("java.lang.Integer").asType(), "com.mojang.serialization.Codec.INT");
+            codecFields.put(types.getPrimitiveType(TypeKind.INT), "com.mojang.serialization.Codec.INT");
+            codecFields.put(elements.getTypeElement("java.lang.Long").asType(), "com.mojang.serialization.Codec.LONG");
+            codecFields.put(types.getPrimitiveType(TypeKind.LONG), "com.mojang.serialization.Codec.LONG");
+            codecFields.put(elements.getTypeElement("java.lang.Float").asType(), "com.mojang.serialization.Codec.FLOAT");
+            codecFields.put(types.getPrimitiveType(TypeKind.FLOAT), "com.mojang.serialization.Codec.FLOAT");
+            codecFields.put(elements.getTypeElement("java.lang.Double").asType(), "com.mojang.serialization.Codec.DOUBLE");
+            codecFields.put(types.getPrimitiveType(TypeKind.DOUBLE), "com.mojang.serialization.Codec.DOUBLE");
+            codecFields.put(elements.getTypeElement("java.lang.String").asType(), "com.mojang.serialization.Codec.STRING");
         }
 
         Map<PackageElement, CodecHolderBuilder> holders = new HashMap<>();
 
-        processRecords(holders, roundEnv);
+        Map<TypeElement, RecordData> recordTypeElements = queryRecords(roundEnv);
+        for (Map.Entry<TypeElement, RecordData> entry : recordTypeElements.entrySet()) {
+            codecFields.put(entry.getKey().asType(), entry.getValue().codecField());
+        }
+        for (Map.Entry<TypeElement, RecordData> entry : recordTypeElements.entrySet()) {
+            processRecord(codecFields, holders, entry.getValue());
+        }
 
         for (Map.Entry<PackageElement, CodecHolderBuilder> entry : holders.entrySet()) {
             String source = entry.getValue().build();
+            if (source == null) {
+                continue;
+            }
 
             try {
                 JavaFileObject javaFileObject = processingEnv.getFiler().createSourceFile(entry.getKey().getQualifiedName().toString() + "." + entry.getKey().getAnnotation(CodecHolder.class).value());
@@ -84,33 +92,39 @@ public class Processor extends AbstractProcessor {
         return false;
     }
 
-    private void processRecords(Map<PackageElement, CodecHolderBuilder> holders, RoundEnvironment roundEnv) {
-        for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(Record.class))) {
-            if (typeElement.getKind() != ElementKind.CLASS) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, typeElement.getQualifiedName() + " is annotated with @Record, but is not a class.");
+    private Map<TypeElement, RecordData> queryRecords(RoundEnvironment roundEnv) {
+        Map<TypeElement, RecordData> records = new HashMap<>();
+        for (TypeElement recordTypeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(Record.class))) {
+            if (recordTypeElement.getKind() != ElementKind.CLASS) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, recordTypeElement.getQualifiedName() + " is annotated with @Record, but is not a class.");
                 continue;
             }
 
-            PackageElement holderPackage = findHolderPackage(typeElement);
+            PackageElement holderPackage = findHolderPackage(recordTypeElement);
             if (holderPackage == null) {
                 continue;
             }
 
-            RecordCodecBuilder record = new RecordCodecBuilder(processingEnv, codecs, typeElement, holderPackage);
-
-            for (VariableElement field : ElementFilter.fieldsIn(typeElement.getEnclosedElements())) {
-                if (field.getAnnotation(Exclude.class) != null) {
-                    continue;
-                }
-                if (codecs.containsKey(field.asType()) || field.getAnnotation(Use.class) != null) {
-                    record.addField(field);
-                } else {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Field " + typeElement.getQualifiedName() + "::" + field.getSimpleName() + " must be a simple type or annotated with @Use or @Exclude.");
-                }
-            }
-
-            holders.computeIfAbsent(holderPackage, CodecHolderBuilder::new).addCodec(record);
+            records.put(recordTypeElement, new RecordData(holderPackage, recordTypeElement));
         }
+        return records;
+    }
+
+    private void processRecord(Map<TypeMirror, String> codecs, Map<PackageElement, CodecHolderBuilder> holders, RecordData record) {
+        RecordCodecBuilder builder = new RecordCodecBuilder(processingEnv, codecs, record);
+
+        for (VariableElement field : ElementFilter.fieldsIn(record.typeElement.getEnclosedElements())) {
+            if (field.getAnnotation(Exclude.class) != null) {
+                continue;
+            }
+            if (codecs.containsKey(field.asType()) || field.getAnnotation(Use.class) != null) {
+                builder.addField(field);
+            } else {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Field " + record.typeElement.getQualifiedName() + "::" + field.getSimpleName() + " must be a simple type or annotated with @Use or @Exclude.");
+            }
+        }
+
+        holders.computeIfAbsent(record.holderPackage, CodecHolderBuilder::new).addCodec(builder);
     }
 
     @Override

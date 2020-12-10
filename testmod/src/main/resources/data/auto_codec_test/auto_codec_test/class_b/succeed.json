@@ -1,0 +1,9 @@
+{
+  "str": "bruh",
+  "num": 123,
+  "classB": {
+    "foo": "moment",
+    "bar": true,
+    "gamerTime": 69
+  }
+}

@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public class SampleClassDataListener implements SimpleResourceReloadListener<Collection<Identifier>> {
+public class ClassBDataListener implements SimpleResourceReloadListener<Collection<Identifier>> {
     private final Identifier id = new Identifier("auto_codec_test", "data/test");
 
     @Override
@@ -30,7 +30,7 @@ public class SampleClassDataListener implements SimpleResourceReloadListener<Col
     public CompletableFuture<Collection<Identifier>> load(ResourceManager resourceManager, Profiler profiler, Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             //noinspection CodeBlock2Expr
-            return resourceManager.findResources("auto_codec_test/sample_class", s -> s.endsWith(".json"));
+            return resourceManager.findResources("auto_codec_test/class_b", s -> s.endsWith(".json"));
         }, executor);
     }
 
@@ -41,7 +41,7 @@ public class SampleClassDataListener implements SimpleResourceReloadListener<Col
                 try {
                     JsonElement element = new Gson().fromJson(new BufferedReader(new InputStreamReader(resourceManager.getResource(sampleClassId).getInputStream())), JsonElement.class);
 
-                    DataResult<Pair<SampleClass, JsonElement>> result = Codecs.SAMPLE_CLASS.decode(JsonOps.INSTANCE, element);
+                    DataResult<Pair<ClassB, JsonElement>> result = Codecs.CLASS_B.decode(JsonOps.INSTANCE, element);
 
                     result.get().map(
                         pair -> {

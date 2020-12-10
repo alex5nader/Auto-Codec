@@ -6,8 +6,10 @@ import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
 
 @Record
-public class SampleClass {
+public class ClassB {
     String str;
+
+    public final ClassA classA;
 
     @Getter("num")
     int num;
@@ -16,9 +18,10 @@ public class SampleClass {
     boolean superCool;
 
     @Constructor
-    public SampleClass(int num, String str) {
+    public ClassB(int num, String str, ClassA classA) {
         this.str = str;
         this.num = num;
+        this.classA = classA;
     }
 
     public int num() {

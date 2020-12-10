@@ -25,7 +25,11 @@ public class CodecHolderBuilder {
             .append("public class ").append(packageElement.getAnnotation(CodecHolder.class).value()).append(" {\n");
 
         for (CodecBuilder codec : codecs) {
-            contents.append(codec.build());
+            String result = codec.build();
+            if (result == null) {
+                return null;
+            }
+            contents.append(result);
         }
 
         contents.append("}\n");
