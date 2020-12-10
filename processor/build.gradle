@@ -8,3 +8,18 @@ group = project.maven_group
 
 dependencies {
 }
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = "sources"
+}
+
+publishing {
+    publications {
+        processor(MavenPublication) {
+            from components.java
+            artifact sourceJar
+            artifactId = "auto_codec"
+        }
+    }
+}
