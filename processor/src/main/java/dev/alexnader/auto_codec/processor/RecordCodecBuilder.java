@@ -1,6 +1,5 @@
 package dev.alexnader.auto_codec.processor;
 
-import dev.alexnader.auto_codec.Constructor;
 import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Use;
 
@@ -32,46 +31,40 @@ public class RecordCodecBuilder implements CodecBuilder {
         fields.add(field);
     }
 
-    private ExecutableElement findConstructorElement() {
+    private List<VariableElement> findValidConstructorFieldOrder() {
         for (ExecutableElement constructorElement : ElementFilter.constructorsIn(record.typeElement.getEnclosedElements())) {
-            Constructor constructor = constructorElement.getAnnotation(Constructor.class);
-            if (constructor != null) {
-                return constructorElement;
+            List<VariableElement> reorderedFields = new ArrayList<>();
+
+            for (VariableElement parameterElement : constructorElement.getParameters()) {
+                String parameterName = parameterElement.getSimpleName().toString();
+                for (VariableElement field : fields) {
+                    if (field.getSimpleName().toString().equals(parameterName) && processingEnvironment.getTypeUtils().isSameType(field.asType(), parameterElement.asType())) {
+                        reorderedFields.add(field);
+                    }
+                }
+            }
+
+            if (reorderedFields.size() == fields.size()) {
+                return reorderedFields;
             }
         }
 
-        processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, String.format("%s must have a constructor annotated with @Constructor.", record.typeElement.getQualifiedName()));
+        StringBuilder error = new StringBuilder()
+            .append(record.typeElement.getQualifiedName()).append(" must have a constructor with the following parameters (in any order): [\n");
+
+        for (VariableElement field : fields) {
+            error.append("    ").append(field.asType()).append(" ").append(field.getSimpleName()).append(",\n");
+        }
+
+        error.append("]");
+
+        processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, error.toString());
         return null;
     }
 
     public String build() {
-        ExecutableElement constructorElement = findConstructorElement();
-        if (constructorElement == null) {
-            return null;
-        }
-
-        List<VariableElement> reorderedFields = new ArrayList<>();
-
-        for (VariableElement parameterElement : constructorElement.getParameters()) {
-            String parameterName = parameterElement.getSimpleName().toString();
-            for (VariableElement field : fields) {
-                if (field.getSimpleName().toString().equals(parameterName) && processingEnvironment.getTypeUtils().isSameType(field.asType(), parameterElement.asType())) {
-                    reorderedFields.add(field);
-                }
-            }
-        }
-
-        if (reorderedFields.size() != fields.size()) {
-            StringBuilder error = new StringBuilder()
-                .append(record.typeElement.getQualifiedName()).append(" must have a constructor with the following parameters (in any order): [\n");
-
-            for (VariableElement field : fields) {
-                error.append("    ").append(field.asType()).append(" ").append(field.getSimpleName()).append(",\n");
-            }
-
-            error.append("]");
-
-            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, error.toString());
+        List<VariableElement> reorderedFields = findValidConstructorFieldOrder();
+        if (reorderedFields == null) {
             return null;
         }
 

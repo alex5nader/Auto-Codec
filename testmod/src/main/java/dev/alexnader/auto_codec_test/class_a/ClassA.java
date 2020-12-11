@@ -1,6 +1,5 @@
 package dev.alexnader.auto_codec_test.class_a;
 
-import dev.alexnader.auto_codec.Constructor;
 import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
 
@@ -17,7 +16,6 @@ public class ClassA {
         return gamerTime;
     }
 
-    @Constructor
     public ClassA(String foo, boolean bar, int gamerTime) {
         this.foo = foo;
         this.bar = bar;

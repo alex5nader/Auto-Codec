@@ -1,6 +1,5 @@
 package dev.alexnader.auto_codec_test;
 
-import dev.alexnader.auto_codec.Constructor;
 import dev.alexnader.auto_codec.Exclude;
 import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
@@ -18,7 +17,6 @@ public class ClassB {
     @Exclude
     boolean superCool;
 
-    @Constructor
     public ClassB(int num, String str, ClassA classA) {
         this.str = str;
         this.num = num;
