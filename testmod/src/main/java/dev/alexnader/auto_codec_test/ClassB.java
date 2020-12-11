@@ -4,6 +4,7 @@ import dev.alexnader.auto_codec.Constructor;
 import dev.alexnader.auto_codec.Exclude;
 import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
+import dev.alexnader.auto_codec_test.class_a.ClassA;
 
 @Record
 public class ClassB {

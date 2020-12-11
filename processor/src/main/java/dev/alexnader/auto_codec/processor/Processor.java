@@ -135,7 +135,16 @@ public class Processor extends AbstractProcessor {
     }
 
     private PackageElement findHolderPackage(TypeElement typeElement) {
-        for (PackageElement packageElement = (PackageElement) typeElement.getEnclosingElement(); packageElement != null; packageElement = (PackageElement) packageElement.getEnclosingElement()) {
+        String[] parts = processingEnv.getElementUtils().getPackageOf(typeElement).getQualifiedName().toString().split("\\.");
+        for (int length = parts.length; length >= 0; length--) {
+            StringBuilder parentPackage = new StringBuilder();
+            for (int i = 0; i < length; i++) {
+                parentPackage.append(parts[i]);
+                if (i != length - 1) {
+                    parentPackage.append('.');
+                }
+            }
+            PackageElement packageElement = processingEnv.getElementUtils().getPackageElement(parentPackage);
             if (packageElement.getAnnotation(CodecHolder.class) != null) {
                 return packageElement;
             }

@@ -1,4 +1,4 @@
-package dev.alexnader.auto_codec_test;
+package dev.alexnader.auto_codec_test.class_a;
 
 import dev.alexnader.auto_codec.Constructor;
 import dev.alexnader.auto_codec.Getter;
@@ -8,7 +8,7 @@ import dev.alexnader.auto_codec.Record;
 public class ClassA {
     public final String foo;
 
-    boolean bar;
+    public boolean bar;
 
     @Getter("getGamerTime")
     private int gamerTime;
