@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public class ClassBDataListener implements SimpleResourceReloadListener<Collection<Identifier>> {
+public class RecordBDataListener implements SimpleResourceReloadListener<Collection<Identifier>> {
     private final Identifier id = new Identifier("auto_codec_test", "data/test");
 
     @Override
@@ -41,7 +41,7 @@ public class ClassBDataListener implements SimpleResourceReloadListener<Collecti
                 try {
                     JsonElement element = new Gson().fromJson(new BufferedReader(new InputStreamReader(resourceManager.getResource(sampleClassId).getInputStream())), JsonElement.class);
 
-                    DataResult<Pair<ClassB, JsonElement>> result = Codecs.SUPER_COOL_CLASS_B_CODEC_WITH_CUSTOM_NAME.decode(JsonOps.INSTANCE, element);
+                    DataResult<Pair<RecordB, JsonElement>> result = Codecs.SUPER_COOL_CLASS_B_CODEC_WITH_CUSTOM_NAME.decode(JsonOps.INSTANCE, element);
 
                     result.get().map(
                         pair -> {

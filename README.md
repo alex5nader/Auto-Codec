@@ -49,7 +49,7 @@ import dev.alexnader.auto_codec.CodecHolder;
 ### Record Codecs
 
 Auto Codec can generate codecs from any subpackage of the holder package. For example,
-the class `dev.alexnader.auto_codec_test.class_a.ClassA` will be placed into
+the class `dev.alexnader.auto_codec_test.record_a.RecordA` will be placed into
 `dev.alexnader.auto_codec_test.Codecs`.
 
 To generate a record codec for a class, annotate the class with `@Record`.

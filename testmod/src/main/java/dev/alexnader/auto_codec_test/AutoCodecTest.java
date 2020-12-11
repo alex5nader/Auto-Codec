@@ -7,6 +7,6 @@ import net.minecraft.resource.ResourceType;
 public class AutoCodecTest implements ModInitializer {
     @Override
     public void onInitialize() {
-        ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new ClassBDataListener());
+        ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new RecordBDataListener());
     }
 }

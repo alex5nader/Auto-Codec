@@ -1,12 +1,14 @@
-package dev.alexnader.auto_codec_test.class_a;
+package dev.alexnader.auto_codec_test.record_a;
 
 import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
+import dev.alexnader.auto_codec.Rename;
 
 @Record
-public class ClassA {
+public class RecordA {
     public final String foo;
 
+    @Rename("definitelyNotBar")
     public boolean bar;
 
     @Getter("getGamerTime")
@@ -16,7 +18,7 @@ public class ClassA {
         return gamerTime;
     }
 
-    public ClassA(String foo, boolean bar, int gamerTime) {
+    public RecordA(String foo, boolean bar, int gamerTime) {
         this.foo = foo;
         this.bar = bar;
         this.gamerTime = gamerTime;
