@@ -105,7 +105,7 @@ public class RecordCodecBuilder extends CodecBuilder {
             Use use = field.element.getAnnotation(Use.class);
             if (use != null) {
                 contents.append(field.element.getAnnotation(Use.class).value());
-            } else { // TODO actually make sure this is valid rather than producing invalid source
+            } else {
                 contents.append(codecs.get(field.element.asType()));
             }
             contents.append(".fieldOf(\"").append(field.dataName).append("\").forGetter(obj -> obj.");
