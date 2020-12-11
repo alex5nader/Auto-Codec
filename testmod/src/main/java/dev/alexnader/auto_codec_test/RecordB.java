@@ -1,8 +1,8 @@
 package dev.alexnader.auto_codec_test;
 
-import dev.alexnader.auto_codec.Exclude;
-import dev.alexnader.auto_codec.Getter;
-import dev.alexnader.auto_codec.Record;
+import dev.alexnader.auto_codec.options.Exclude;
+import dev.alexnader.auto_codec.options.Getter;
+import dev.alexnader.auto_codec.codecs.Record;
 import dev.alexnader.auto_codec_test.record_a.RecordA;
 
 @Record("SUPER_COOL_CLASS_B_CODEC_WITH_CUSTOM_NAME")

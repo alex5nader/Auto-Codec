@@ -1,4 +1,4 @@
-package dev.alexnader.auto_codec;
+package dev.alexnader.auto_codec.options;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Rename {
+public @interface Getter {
     String value();
 }

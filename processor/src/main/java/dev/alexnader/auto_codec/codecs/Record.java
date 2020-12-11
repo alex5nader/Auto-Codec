@@ -1,10 +1,12 @@
-package dev.alexnader.auto_codec;
+package dev.alexnader.auto_codec.codecs;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.FIELD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Exclude {}
+public @interface Record {
+    String value() default "";
+}

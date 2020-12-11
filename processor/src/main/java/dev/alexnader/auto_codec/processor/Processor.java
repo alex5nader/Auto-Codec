@@ -1,9 +1,9 @@
 package dev.alexnader.auto_codec.processor;
 
 import dev.alexnader.auto_codec.CodecHolder;
-import dev.alexnader.auto_codec.Exclude;
-import dev.alexnader.auto_codec.Record;
-import dev.alexnader.auto_codec.Use;
+import dev.alexnader.auto_codec.options.Exclude;
+import dev.alexnader.auto_codec.codecs.Record;
+import dev.alexnader.auto_codec.options.Use;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;

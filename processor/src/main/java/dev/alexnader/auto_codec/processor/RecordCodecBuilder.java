@@ -1,8 +1,8 @@
 package dev.alexnader.auto_codec.processor;
 
-import dev.alexnader.auto_codec.Getter;
-import dev.alexnader.auto_codec.Rename;
-import dev.alexnader.auto_codec.Use;
+import dev.alexnader.auto_codec.options.Getter;
+import dev.alexnader.auto_codec.options.Rename;
+import dev.alexnader.auto_codec.options.Use;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;

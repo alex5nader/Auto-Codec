@@ -1,7 +1,7 @@
 package dev.alexnader.auto_codec.processor;
 
 import dev.alexnader.auto_codec.CodecHolder;
-import dev.alexnader.auto_codec.Record;
+import dev.alexnader.auto_codec.codecs.Record;
 
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
