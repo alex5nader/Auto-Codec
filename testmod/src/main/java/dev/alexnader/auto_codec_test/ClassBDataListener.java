@@ -41,7 +41,7 @@ public class ClassBDataListener implements SimpleResourceReloadListener<Collecti
                 try {
                     JsonElement element = new Gson().fromJson(new BufferedReader(new InputStreamReader(resourceManager.getResource(sampleClassId).getInputStream())), JsonElement.class);
 
-                    DataResult<Pair<ClassB, JsonElement>> result = Codecs.CLASS_B.decode(JsonOps.INSTANCE, element);
+                    DataResult<Pair<ClassB, JsonElement>> result = Codecs.SUPER_COOL_CLASS_B_CODEC_WITH_CUSTOM_NAME.decode(JsonOps.INSTANCE, element);
 
                     result.get().map(
                         pair -> {

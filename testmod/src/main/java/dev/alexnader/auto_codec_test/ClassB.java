@@ -6,7 +6,7 @@ import dev.alexnader.auto_codec.Getter;
 import dev.alexnader.auto_codec.Record;
 import dev.alexnader.auto_codec_test.class_a.ClassA;
 
-@Record
+@Record("SUPER_COOL_CLASS_B_CODEC_WITH_CUSTOM_NAME")
 public class ClassB {
     String str;
 
