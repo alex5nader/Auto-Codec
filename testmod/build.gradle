@@ -20,3 +20,7 @@ dependencies {
     compileOnly(project(":processor"))
     annotationProcessor(project(":processor"))
 }
+
+build {
+    outputs.upToDateWhen { false }
+}

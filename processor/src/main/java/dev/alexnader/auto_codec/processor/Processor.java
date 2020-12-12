@@ -1,8 +1,7 @@
 package dev.alexnader.auto_codec.processor;
 
-import dev.alexnader.auto_codec.CodecHolder;
-import dev.alexnader.auto_codec.options.Exclude;
 import dev.alexnader.auto_codec.codecs.Record;
+import dev.alexnader.auto_codec.options.Exclude;
 import dev.alexnader.auto_codec.options.Use;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -30,56 +29,67 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class Processor extends AbstractProcessor {
+class Processor extends AbstractProcessor {
     public static String toConstName(String className) {
         return className.replaceAll("([a-z])([A-Z]+)", "$1_$2").toUpperCase(Locale.ROOT);
     }
 
-    public static String getCodecName(TypeElement type, String annotationValue) {
-        return toConstName("".equals(annotationValue) ? type.getSimpleName().toString() : annotationValue);
-    }
+//    private CodecData getDataForField(CharSequence typeElementName, CharSequence fieldName) {
+//        Optional<VariableElement> maybeCodecFieldElement =
+//            ElementFilter.fieldsIn(processingEnv.getElementUtils().getTypeElement(typeElementName)
+//            .getEnclosedElements())
+//            .stream()
+//            .filter(field -> field.getSimpleName().contentEquals(fieldName))
+//            .findFirst();
+//
+//        if (maybeCodecFieldElement.isPresent()) {
+//            return new CodecData(processingEnv.getElementUtils().getPackageElement(t)maybeCodecFieldElement;
+//        } else {
+//
+//        }
+//    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Map<TypeMirror, String> codecFields = new HashMap<>();
+        Map<TypeMirror, CodecData> defaultCodecs = new HashMap<>();
         {
             Types types = processingEnv.getTypeUtils();
             Elements elements = processingEnv.getElementUtils();
-            codecFields.put(elements.getTypeElement("java.lang.Boolean").asType(), "com.mojang.serialization.Codec.BOOL");
-            codecFields.put(types.getPrimitiveType(TypeKind.BOOLEAN), "com.mojang.serialization.Codec.BOOL");
-            codecFields.put(elements.getTypeElement("java.lang.Byte").asType(), "com.mojang.serialization.Codec.BYTE");
-            codecFields.put(types.getPrimitiveType(TypeKind.BYTE), "com.mojang.serialization.Codec.BYTE");
-            codecFields.put(elements.getTypeElement("java.lang.Short").asType(), "com.mojang.serialization.Codec.SHORT");
-            codecFields.put(types.getPrimitiveType(TypeKind.SHORT), "com.mojang.serialization.Codec.SHORT");
-            codecFields.put(elements.getTypeElement("java.lang.Integer").asType(), "com.mojang.serialization.Codec.INT");
-            codecFields.put(types.getPrimitiveType(TypeKind.INT), "com.mojang.serialization.Codec.INT");
-            codecFields.put(elements.getTypeElement("java.lang.Long").asType(), "com.mojang.serialization.Codec.LONG");
-            codecFields.put(types.getPrimitiveType(TypeKind.LONG), "com.mojang.serialization.Codec.LONG");
-            codecFields.put(elements.getTypeElement("java.lang.Float").asType(), "com.mojang.serialization.Codec.FLOAT");
-            codecFields.put(types.getPrimitiveType(TypeKind.FLOAT), "com.mojang.serialization.Codec.FLOAT");
-            codecFields.put(elements.getTypeElement("java.lang.Double").asType(), "com.mojang.serialization.Codec.DOUBLE");
-            codecFields.put(types.getPrimitiveType(TypeKind.DOUBLE), "com.mojang.serialization.Codec.DOUBLE");
-            codecFields.put(elements.getTypeElement("java.lang.String").asType(), "com.mojang.serialization.Codec.STRING");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Boolean").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "BOOL");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.BOOLEAN), elements.getTypeElement("com.mojang.serialization.Codec"), "BOOL");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Byte").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "BYTE");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.BYTE), elements.getTypeElement("com.mojang.serialization.Codec"), "BYTE");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Short").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "SHORT");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.SHORT), elements.getTypeElement("com.mojang.serialization.Codec"), "SHORT");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Integer").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "INT");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.INT), elements.getTypeElement("com.mojang.serialization.Codec"), "INT");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Long").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "LONG");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.LONG), elements.getTypeElement("com.mojang.serialization.Codec"), "LONG");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Float").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "FLOAT");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.FLOAT), elements.getTypeElement("com.mojang.serialization.Codec"), "FLOAT");
+            defaultCodecs.put(elements.getTypeElement("java.lang.Double").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "DOUBLE");
+            defaultCodecs.put(types.getPrimitiveType(TypeKind.DOUBLE), elements.getTypeElement("com.mojang.serialization.Codec"), "DOUBLE");
+            defaultCodecs.put(elements.getTypeElement("java.lang.String").asType(), elements.getTypeElement("com.mojang.serialization.Codec"), "STRING");
         }
 
-        Map<PackageElement, CodecHolderBuilder> holders = new HashMap<>();
+        Map<PackageElement, CodecHolder> holders = new HashMap<>();
 
-        Map<TypeElement, RecordData> recordTypeElements = queryRecords(roundEnv);
-        for (Map.Entry<TypeElement, RecordData> entry : recordTypeElements.entrySet()) {
-            codecFields.put(entry.getKey().asType(), entry.getValue().codecField());
+        Map<TypeElement, CodecData> recordTypeElements = queryRecords(roundEnv);
+        for (Map.Entry<TypeElement, CodecData> entry : recordTypeElements.entrySet()) {
+            defaultCodecs.put(entry.getKey().asType(), entry.getValue().codecField());
         }
-        for (Map.Entry<TypeElement, RecordData> entry : recordTypeElements.entrySet()) {
-            processRecord(codecFields, holders, entry.getValue());
+        for (Map.Entry<TypeElement, CodecData> entry : recordTypeElements.entrySet()) {
+            processRecord(defaultCodecs, holders, entry.getValue());
         }
 
-        for (Map.Entry<PackageElement, CodecHolderBuilder> entry : holders.entrySet()) {
+        for (Map.Entry<PackageElement, CodecHolder> entry : holders.entrySet()) {
             String source = entry.getValue().build();
             if (source == null) {
                 continue;
             }
 
             try {
-                JavaFileObject javaFileObject = processingEnv.getFiler().createSourceFile(entry.getKey().getQualifiedName().toString() + "." + entry.getKey().getAnnotation(CodecHolder.class).value());
+                JavaFileObject javaFileObject = processingEnv.getFiler().createSourceFile(entry.getKey().getQualifiedName().toString() + "." + entry.getKey().getAnnotation(dev.alexnader.auto_codec.CodecHolder.class).value());
 
                 try (Writer writer = javaFileObject.openWriter()) {
                     writer.write(source);
@@ -92,8 +102,8 @@ public class Processor extends AbstractProcessor {
         return false;
     }
 
-    private Map<TypeElement, RecordData> queryRecords(RoundEnvironment roundEnv) {
-        Map<TypeElement, RecordData> records = new HashMap<>();
+    private Map<TypeElement, CodecData> queryRecords(RoundEnvironment roundEnv) {
+        Map<TypeElement, CodecData> records = new HashMap<>();
         for (TypeElement recordTypeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(Record.class))) {
             if (recordTypeElement.getKind() != ElementKind.CLASS) {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, recordTypeElement.getQualifiedName() + " is annotated with @Record, but is not a class.");
@@ -105,13 +115,13 @@ public class Processor extends AbstractProcessor {
                 continue;
             }
 
-            records.put(recordTypeElement, new RecordData(holderPackage, recordTypeElement));
+            records.put(recordTypeElement, new CodecData(holderPackage, recordTypeElement));
         }
         return records;
     }
 
-    private void processRecord(Map<TypeMirror, String> codecs, Map<PackageElement, CodecHolderBuilder> holders, RecordData record) {
-        RecordCodecBuilder builder = new RecordCodecBuilder(processingEnv, codecs, record);
+    private void processRecord(Map<TypeMirror, String> codecs, Map<PackageElement, CodecHolder> holders, CodecData record) {
+        RecordCodec builder = new RecordCodec(processingEnv, codecs, record);
 
         for (VariableElement field : ElementFilter.fieldsIn(record.typeElement.getEnclosedElements())) {
             if (field.getAnnotation(Exclude.class) != null) {
@@ -124,7 +134,7 @@ public class Processor extends AbstractProcessor {
             }
         }
 
-        holders.computeIfAbsent(record.holderPackage, CodecHolderBuilder::new).addCodec(builder);
+        holders.computeIfAbsent(record.holderPackage, CodecHolder::new).addCodec(builder);
     }
 
     @Override
@@ -145,7 +155,7 @@ public class Processor extends AbstractProcessor {
                 }
             }
             PackageElement packageElement = processingEnv.getElementUtils().getPackageElement(parentPackage);
-            if (packageElement.getAnnotation(CodecHolder.class) != null) {
+            if (packageElement.getAnnotation(dev.alexnader.auto_codec.CodecHolder.class) != null) {
                 return packageElement;
             }
         }

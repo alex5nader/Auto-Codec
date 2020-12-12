@@ -1,5 +1,6 @@
 package dev.alexnader.auto_codec.processor;
 
+import dev.alexnader.auto_codec.codecs.Record;
 import dev.alexnader.auto_codec.options.Getter;
 import dev.alexnader.auto_codec.options.Rename;
 import dev.alexnader.auto_codec.options.Use;
@@ -7,22 +8,22 @@ import dev.alexnader.auto_codec.options.Use;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-public class RecordCodecBuilder extends CodecBuilder {
+class RecordCodec extends Codec {
     private static class Field {
         public final VariableElement element;
         public final String dataName;
+        public final String codec;
 
-        public Field(VariableElement element) {
+        public Field(Map<TypeMirror, String> defaultCodecs, VariableElement element) {
             this.element = element;
 
             Rename rename = element.getAnnotation(Rename.class);
@@ -31,30 +32,31 @@ public class RecordCodecBuilder extends CodecBuilder {
             } else {
                 dataName = element.getSimpleName().toString();
             }
+
+            Use use = element.getAnnotation(Use.class);
+            if (use != null) {
+                codec = use.value();
+            } else {
+                codec = defaultCodecs.get(element.asType());
+            }
         }
     }
 
     private final Map<TypeMirror, String> codecs;
-    private final RecordData record;
 
     private final List<Field> fields = new ArrayList<>();
 
-    public RecordCodecBuilder(ProcessingEnvironment processingEnvironment, Map<TypeMirror, String> codecs, RecordData record) {
-        super(processingEnvironment);
+    public RecordCodec(ProcessingEnvironment processingEnvironment, CodecHolder holder, TypeElement resultTypeElement, Map<TypeMirror, String> codecs) {
+        super(processingEnvironment, Record.class, holder, resultTypeElement);
         this.codecs = codecs;
-        this.record = record;
-    }
-
-    public Set<CodecBuilder> directDependencies() {
-        return Collections.emptySet();
     }
 
     public void addField(VariableElement fieldElement) {
-        fields.add(new Field(fieldElement));
+        fields.add(new Field(codecs, fieldElement));
     }
 
     private List<Field> findValidConstructorFieldOrder() {
-        for (ExecutableElement constructorElement : ElementFilter.constructorsIn(record.typeElement.getEnclosedElements())) {
+        for (ExecutableElement constructorElement : ElementFilter.constructorsIn(resultTypeElement.getEnclosedElements())) {
             List<Field> reorderedFields = new ArrayList<>();
 
             for (VariableElement parameterElement : constructorElement.getParameters()) {
@@ -72,7 +74,7 @@ public class RecordCodecBuilder extends CodecBuilder {
         }
 
         StringBuilder error = new StringBuilder()
-            .append(record.typeElement.getQualifiedName()).append(" must have a constructor with the following parameters (in any order): [\n");
+            .append(resultTypeElement.getQualifiedName()).append(" must have a constructor with the following parameters (in any order): [\n");
 
         for (Field field : fields) {
             error.append("    ").append(field.element.asType()).append(" ").append(field.element.getSimpleName()).append(",\n");
@@ -96,19 +98,13 @@ public class RecordCodecBuilder extends CodecBuilder {
 
     public String source() {
         StringBuilder contents = new StringBuilder()
-            .append("public static final com.mojang.serialization.Codec<").append(record.typeElement.getQualifiedName()).append("> ").append(record.codecName()).append(" =\n")
+            .append("public static final com.mojang.serialization.Codec<").append(resultTypeElement.getQualifiedName()).append("> ").append(data.codecName()).append(" =\n")
             .append("com.mojang.serialization.codecs.RecordCodecBuilder.create(inst -> inst.group(\n");
 
         for (int i = 0, size = fields.size(); i < size; i++) {
             Field field = fields.get(i);
 
-            Use use = field.element.getAnnotation(Use.class);
-            if (use != null) {
-                contents.append(field.element.getAnnotation(Use.class).value());
-            } else {
-                contents.append(codecs.get(field.element.asType()));
-            }
-            contents.append(".fieldOf(\"").append(field.dataName).append("\").forGetter(obj -> obj.");
+            contents.append(field.codec).append(".fieldOf(\"").append(field.dataName).append("\").forGetter(obj -> obj.");
 
             boolean fieldIsAccessible;
             fieldIsAccessible:
@@ -123,7 +119,7 @@ public class RecordCodecBuilder extends CodecBuilder {
                     }
                 }
 
-                fieldIsAccessible = record.holderCanSeePackagePrivateFields();
+                fieldIsAccessible = data.holderCanSeePackagePrivateFields();
             }
 
             Getter getter = field.element.getAnnotation(Getter.class);
@@ -132,7 +128,7 @@ public class RecordCodecBuilder extends CodecBuilder {
             } else if (fieldIsAccessible) {
                 contents.append(field.element.getSimpleName());
             } else {
-                processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, record.typeElement.getQualifiedName() + "::" + field.element.getSimpleName() + " is not accessible from the @CodecHolder package (`" + record.typeElement.getQualifiedName() + "`) and has no @Getter defined.");
+                processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, data.typeElement.getQualifiedName() + "::" + field.element.getSimpleName() + " is not accessible from the @CodecHolder package (`" + data.typeElement.getQualifiedName() + "`) and has no @Getter defined.");
                 return null;
             }
             contents.append(")");
@@ -143,7 +139,7 @@ public class RecordCodecBuilder extends CodecBuilder {
             contents.append("\n");
         }
 
-        contents.append(").apply(inst, ").append(record.typeElement.getQualifiedName()).append("::new));\n");
+        contents.append(").apply(inst, ").append(data.typeElement.getQualifiedName()).append("::new));\n");
 
         return contents.toString();
     }

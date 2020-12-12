@@ -1,30 +1,30 @@
 package dev.alexnader.auto_codec.processor;
 
-import dev.alexnader.auto_codec.CodecHolder;
-
 import javax.lang.model.element.PackageElement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CodecHolderBuilder {
-    private final PackageElement packageElement;
-    private final List<CodecBuilder> codecs = new ArrayList<>();
+class CodecHolder {
+    public final PackageElement packageElement;
+    public final String name;
+    public final List<Codec> codecs = new ArrayList<>();
 
-    public CodecHolderBuilder(PackageElement packageElement) {
+    public CodecHolder(PackageElement packageElement) {
         this.packageElement = packageElement;
+        name = packageElement.getAnnotation(dev.alexnader.auto_codec.CodecHolder.class).value();
     }
 
-    public void addCodec(CodecBuilder codec) {
-        codecs.add(codec);
+    public String qualifiedClass() {
+        return packageElement.getQualifiedName().toString() + "." + name;
     }
 
     public String build() {
         StringBuilder contents = new StringBuilder()
             .append("package ").append(packageElement.getQualifiedName()).append(";\n")
             .append("\n")
-            .append("public class ").append(packageElement.getAnnotation(CodecHolder.class).value()).append(" {\n");
+            .append("public class ").append(name).append(" {\n");
 
-        for (CodecBuilder codec : codecs) {
+        for (Codec codec : codecs) {
             String result = codec.build();
             if (result == null) {
                 return null;
